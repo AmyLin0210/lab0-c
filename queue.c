@@ -5,6 +5,8 @@
 #include "harness.h"
 #include "queue.h"
 
+#define BUFFER_SIZE 300
+
 /*
  * Create empty queue.
  * Return NULL if could not allocate space.
@@ -12,17 +14,31 @@
 queue_t *q_new()
 {
     queue_t *q = malloc(sizeof(queue_t));
-    /* TODO: What if malloc returned NULL? */
+
+    if (!q)
+        return NULL;
+
     q->head = NULL;
+    q->tail = NULL;
+    q->size = 0;
     return q;
 }
 
 /* Free all storage used by queue */
 void q_free(queue_t *q)
 {
-    /* TODO: How about freeing the list elements and the strings? */
-    /* Free queue structure */
-    free(q);
+    list_ele_t *tmp_e = NULL;
+
+    if (q) {
+        while (q->head) {
+            if (q->head->value)
+                free(q->head->value);
+            tmp_e = q->head;
+            q->head = tmp_e->next;
+            free(tmp_e);
+        }
+        free(q);
+    }
 }
 
 /*
@@ -34,13 +50,28 @@ void q_free(queue_t *q)
  */
 bool q_insert_head(queue_t *q, char *s)
 {
-    list_ele_t *newh;
-    /* TODO: What should you do if the q is NULL? */
-    newh = malloc(sizeof(list_ele_t));
-    /* Don't forget to allocate space for the string and copy it */
-    /* What if either call to malloc returns NULL? */
+    if (!q)
+        return false;
+
+    list_ele_t *newh = malloc(sizeof(list_ele_t));
+    if (!newh)
+        return false;
+
+    newh->value = malloc(sizeof(char) * (strlen(s) + 1));
+
+    if (!newh->value) {
+        free(newh);
+        return false;
+    }
+
+    snprintf(newh->value, BUFFER_SIZE, "%s", s);
     newh->next = q->head;
     q->head = newh;
+    (q->size)++;
+
+    if (!q->tail)
+        q->tail = q->head;
+
     return true;
 }
 
@@ -53,10 +84,32 @@ bool q_insert_head(queue_t *q, char *s)
  */
 bool q_insert_tail(queue_t *q, char *s)
 {
-    /* TODO: You need to write the complete code for this function */
-    /* Remember: It should operate in O(1) time */
-    /* TODO: Remove the above comment when you are about to implement. */
-    return false;
+    if (!q)
+        return false;
+
+    list_ele_t *newt = malloc(sizeof(list_ele_t));
+
+    if (!newt)
+        return false;
+
+    newt->value = malloc(sizeof(char) * (strlen(s) + 1));
+
+    if (!newt->value) {
+        free(newt);
+        return false;
+    }
+
+    if (!q->head)
+        q->head = newt;
+    else
+        q->tail->next = newt;
+
+    snprintf(newt->value, BUFFER_SIZE, "%s", s);
+    newt->next = NULL;
+    q->tail = newt;
+    (q->size)++;
+
+    return true;
 }
 
 /*
@@ -69,9 +122,20 @@ bool q_insert_tail(queue_t *q, char *s)
  */
 bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
 {
-    /* TODO: You need to fix up this code. */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !(q->head))
+        return false;
+
+    list_ele_t *tmp = q->head;
+    snprintf(sp, bufsize, "%s", tmp->value);
     q->head = q->head->next;
+    (q->size)--;
+
+    free(tmp->value);
+    free(tmp);
+
+    if (!q->head)
+        q->tail = NULL;
+
     return true;
 }
 
@@ -81,10 +145,9 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
  */
 int q_size(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* Remember: It should operate in O(1) time */
-    /* TODO: Remove the above comment when you are about to implement. */
-    return 0;
+    if (!q)
+        return 0;
+    return q->size;
 }
 
 /*
@@ -96,8 +159,19 @@ int q_size(queue_t *q)
  */
 void q_reverse(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->head)
+        return;
+
+    list_ele_t *prev = q->head, *next = q->head->next;
+    q->tail = q->head;
+    q->head->next = NULL;
+
+    while (next) {
+        q->head = next;
+        next = next->next;
+        q->head->next = prev;
+        prev = q->head;
+    }
 }
 
 /*
@@ -107,6 +181,55 @@ void q_reverse(queue_t *q)
  */
 void q_sort(queue_t *q)
 {
-    /* TODO: You need to write the code for this function */
-    /* TODO: Remove the above comment when you are about to implement. */
+    if (!q || !q->head || q->size == 1)
+        return;
+
+    quicksort(&(q->head));
+
+    list_ele_t *tmp = q->head;
+
+    while (tmp->next)
+        tmp = tmp->next;
+
+    q->tail = tmp;
+}
+
+void list_add_node_t(list_ele_t **list, list_ele_t *node_t)
+{
+    node_t->next = *list;
+    *list = node_t;
+}
+
+void list_concat(list_ele_t **left, list_ele_t *right)
+{
+    while (*left)
+        left = &((*left)->next);
+    *left = right;
+}
+
+void quicksort(list_ele_t **list)
+{
+    if (!*list)
+        return;
+
+    list_ele_t *pivot = *list;
+    char *value = pivot->value;
+    list_ele_t *p = pivot->next;
+    pivot->next = NULL;
+
+    list_ele_t *left = NULL, *right = NULL;
+    while (p) {
+        list_ele_t *n = p;
+        p = p->next;
+        list_add_node_t(strcasecmp(n->value, value) > 0 ? &right : &left, n);
+    }
+
+    quicksort(&left);
+    quicksort(&right);
+
+    list_ele_t *result = NULL;
+    list_concat(&result, left);
+    list_concat(&result, pivot);
+    list_concat(&result, right);
+    *list = result;
 }
