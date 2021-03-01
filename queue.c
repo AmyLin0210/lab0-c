@@ -184,7 +184,7 @@ void q_sort(queue_t *q)
     if (!q || !q->head || q->size == 1)
         return;
 
-    quicksort(&(q->head));
+    mergesort(&(q->head), q->size);
 
     list_ele_t *tmp = q->head;
 
@@ -194,42 +194,55 @@ void q_sort(queue_t *q)
     q->tail = tmp;
 }
 
-void list_add_node_t(list_ele_t **list, list_ele_t *node_t)
+list_ele_t *sorted_merge(list_ele_t *front, list_ele_t *back)
 {
-    node_t->next = *list;
-    *list = node_t;
-}
+    if (!front)
+        return back;
+    if (!back)
+        return front;
 
-void list_concat(list_ele_t **left, list_ele_t *right)
-{
-    while (*left)
-        left = &((*left)->next);
-    *left = right;
-}
+    list_ele_t *tmp = front;
+    list_ele_t **result = &tmp;
+    list_ele_t *head =
+        (strcasecmp(back->value, front->value) >= 0) ? front : back;
 
-void quicksort(list_ele_t **list)
-{
-    if (!*list)
-        return;
-
-    list_ele_t *pivot = *list;
-    char *value = pivot->value;
-    list_ele_t *p = pivot->next;
-    pivot->next = NULL;
-
-    list_ele_t *left = NULL, *right = NULL;
-    while (p) {
-        list_ele_t *n = p;
-        p = p->next;
-        list_add_node_t(strcasecmp(n->value, value) > 0 ? &right : &left, n);
+    while (front && back) {
+        while (front && strcasecmp(back->value, front->value) >= 0) {
+            result = &((*result)->next);
+            front = front->next;
+        }
+        *result = back;
+        if (!front) {
+            break;
+        }
+        while (back && strcasecmp(front->value, back->value) >= 0) {
+            result = &((*result)->next);
+            back = back->next;
+        }
+        *result = front;
     }
 
-    quicksort(&left);
-    quicksort(&right);
+    return head;
+}
 
-    list_ele_t *result = NULL;
-    list_concat(&result, left);
-    list_concat(&result, pivot);
-    list_concat(&result, right);
-    *list = result;
+void mergesort(list_ele_t **list, int list_len)
+{
+    list_ele_t *tmp = *list;
+    list_ele_t *front = *list;
+    list_ele_t *back = NULL;
+
+    if (list_len <= 1)
+        return;
+
+    for (int i = 0; i < (list_len / 2) - 1; ++i) {
+        tmp = tmp->next;
+    }
+
+    back = tmp->next;
+    tmp->next = NULL;
+
+    mergesort(&front, list_len / 2);
+    mergesort(&back, list_len - list_len / 2);
+
+    *list = sorted_merge(front, back);
 }
