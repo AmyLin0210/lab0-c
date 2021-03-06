@@ -194,14 +194,26 @@ void q_sort(queue_t *q)
     q->tail = tmp;
 }
 
-list_ele_t *sorted_merge(list_ele_t *front, list_ele_t *back)
+void mergesort(list_ele_t **list, int list_len)
 {
-    if (!front)
-        return back;
-    if (!back)
-        return front;
+    list_ele_t *tmp = *list;
+    list_ele_t *front = *list;
+    list_ele_t *back = NULL;
 
-    list_ele_t *tmp = front;
+    if (list_len <= 1)
+        return;
+
+    for (int i = 0; i < (list_len / 2) - 1; ++i) {
+        tmp = tmp->next;
+    }
+
+    back = tmp->next;
+    tmp->next = NULL;
+
+    mergesort(&front, list_len / 2);
+    mergesort(&back, list_len - list_len / 2);
+
+    tmp = front;
     list_ele_t **result = &tmp;
     list_ele_t *head =
         (strcasecmp(back->value, front->value) >= 0) ? front : back;
@@ -222,27 +234,5 @@ list_ele_t *sorted_merge(list_ele_t *front, list_ele_t *back)
         *result = front;
     }
 
-    return head;
-}
-
-void mergesort(list_ele_t **list, int list_len)
-{
-    list_ele_t *tmp = *list;
-    list_ele_t *front = *list;
-    list_ele_t *back = NULL;
-
-    if (list_len <= 1)
-        return;
-
-    for (int i = 0; i < (list_len / 2) - 1; ++i) {
-        tmp = tmp->next;
-    }
-
-    back = tmp->next;
-    tmp->next = NULL;
-
-    mergesort(&front, list_len / 2);
-    mergesort(&back, list_len - list_len / 2);
-
-    *list = sorted_merge(front, back);
+    *list = head;
 }

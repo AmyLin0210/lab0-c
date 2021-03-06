@@ -93,7 +93,6 @@ void q_reverse(queue_t *q);
  */
 void q_sort(queue_t *q);
 
-list_ele_t *sorted_merge(list_ele_t *front, list_ele_t *back);
 void mergesort(list_ele_t **list, int list_len);
 
 #endif /* LAB0_QUEUE_H */
