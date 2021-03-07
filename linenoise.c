@@ -1214,6 +1214,9 @@ static void linenoiseAtExit(void)
  * Using a circular buffer is smarter, but a bit more complex to handle. */
 int linenoiseHistoryAdd(const char *line)
 {
+    if (line == NULL)
+        return 0;
+
     char *linecopy;
 
     if (history_max_len == 0)
@@ -1326,4 +1329,9 @@ int linenoiseHistoryLoad(const char *filename)
     }
     fclose(fp);
     return 0;
+}
+
+void linenoiseHistoryFree(void)
+{
+    freeHistory();
 }
